@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPulse - Transaction Tracker</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>💰 PayPulse</h1>
+                <p>Track Your Transactions & Visualize Your Spending</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <nav class="nav">
+                    <button class="nav-button active" data-section="dashboard">📊 Dashboard</button>
+                    <button class="nav-button" data-section="transactions">💳 Transactions</button>
+                    <button class="nav-button" data-section="add-transaction">➕ Add Transaction</button>
+                    <button class="nav-button" data-section="analytics">📈 Analytics</button>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section active">
+                    <h2>Dashboard</h2>
+                    
+                    <!-- Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card income">
+                            <h3>Total Income</h3>
+                            <p class="stat-value" id="stat-income">$0.00</p>
+                        </div>
+                        <div class="stat-card expense">
+                            <h3>Total Expense</h3>
+                            <p class="stat-value" id="stat-expense">$0.00</p>
+                        </div>
+                        <div class="stat-card balance">
+                            <h3>Balance</h3>
+                            <p class="stat-value" id="stat-balance">$0.00</p>
+                        </div>
+                        <div class="stat-card count">
+                            <h3>Transactions</h3>
+                            <p class="stat-value" id="stat-count">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <h3>Spending by Category</h3>
+                            <div id="pieChart"></div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <h3>Recent Transactions</h3>
+                            <div id="recentTransactions" class="recent-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transactions Section -->
+                <section id="transactions" class="section">
+                    <h2>All Transactions</h2>
+                    
+                    <!-- Filters -->
+                    <div class="filters">
+                        <input type="text" id="searchInput" placeholder="Search transactions..." class="search-input">
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+
+                    <!-- Transactions Table -->
+                    <div class="table-container">
+                        <table id="transactionsTable" class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Add Transaction Section -->
+                <section id="add-transaction" class="section">
+                    <h2>Add New Transaction</h2>
+                    
+                    <form id="transactionForm" class="transaction-form">
+                        <div class="form-group">
+                            <label for="amount">Amount *</label>
+                            <input type="number" id="amount" name="amount" step="0.01" required placeholder="0.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select a category</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description *</label>
+                            <input type="text" id="description" name="description" required placeholder="Enter transaction description">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="transactionDate">Date *</label>
+                            <input type="date" id="transactionDate" name="date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="transactionType">Type *</label>
+                            <select id="transactionType" name="type" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-submit">Add Transaction</button>
+                    </form>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics" class="section">
+                    <h2>Analytics & Reports</h2>
+
+                    <div class="analytics-container">
+                        <div class="analytics-card">
+                            <h3>Expense Breakdown</h3>
+                            <div id="expenseChart"></div>
+                        </div>
+
+                        <div class="analytics-card">
+                            <h3>Category Summary</h3>
+                            <div id="categorySummary" class="category-summary"></div>
+                        </div>
+                    </div>
+
+                    <div class="export-section">
+                        <button id="exportBtn" class="btn-export">📥 Export Data as JSON</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Edit/Delete -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Transaction</h2>
+            <form id="editForm" class="transaction-form">
+                <input type="hidden" id="editId" name="id">
+                
+                <div class="form-group">
+                    <label for="editAmount">Amount *</label>
+                    <input type="number" id="editAmount" name="amount" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editCategory">Category *</label>
+                    <select id="editCategory" name="category" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDescription">Description *</label>
+                    <input type="text" id="editDescription" name="description" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDate">Date *</label>
+                    <input type="date" id="editDate" name="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editType">Type *</label>
+                    <select id="editType" name="type" required>
+                        <option value="expense">Expense</option>
+                        <option value="income">Income</option>
+                    </select>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-submit">Update</button>
+                    <button type="button" id="deleteBtn" class="btn-delete">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
