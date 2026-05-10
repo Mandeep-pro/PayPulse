@@ -9,6 +9,126 @@ let allTransactions = [];
 let allCategories = [];
 let currentEditId = null;
 
+/* ==================== Enhanced Visual Effects ==================== */
+
+// Smooth number counter animation
+function animateValue(element, start, end, duration = 1000) {
+  let startTimestamp = null;
+  const originalText = element.textContent;
+  
+  const step = (timestamp) => {
+    if (!startTimestamp) startTimestamp = timestamp;
+    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    const value = Math.floor(progress * (end - start) + start);
+    
+    element.textContent = originalText.replace(/[\d.,-]+/g, value.toLocaleString());
+    
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  };
+  
+  requestAnimationFrame(step);
+}
+
+// Observe elements and trigger animations when visible
+function observeElements() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  
+  document.querySelectorAll('.stat-card, .chart-wrapper, .category-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(el);
+  });
+}
+
+// Add ripple effect to buttons
+function addRippleEffect() {
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+      
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      ripple.classList.add('ripple');
+      
+      // Add ripple styles
+      if (!document.getElementById('ripple-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ripple-styles';
+        style.textContent = `
+          .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+          }
+          @keyframes ripple-animation {
+            to {
+              transform: scale(4);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      this.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    });
+  });
+}
+
+// Keyboard shortcuts
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.focus();
+    }
+    
+    // Ctrl/Cmd + D for dashboard
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      const dashboardBtn = document.querySelector('[data-section="dashboard"]');
+      if (dashboardBtn) dashboardBtn.click();
+    }
+  });
+}
+
+// Scroll reveal animation
+function setupScrollReveal() {
+  window.addEventListener('scroll', () => {
+    document.querySelectorAll('.stat-card, .chart-wrapper').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const isVisible = rect.top < window.innerHeight - 50;
+      if (isVisible && !el.classList.contains('revealed')) {
+        el.classList.add('revealed');
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      }
+    });
+  });
+}
+
 /* ==================== Loading Spinner ==================== */
 
 function showLoadingSpinner(container) {
@@ -38,6 +158,14 @@ function formatCurrency(amount) {
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeApp();
+  
+  // Initialize visual effects
+  setTimeout(() => {
+    addRippleEffect();
+    observeElements();
+    setupScrollReveal();
+    setupKeyboardShortcuts();
+  }, 100);
 });
 
 async function initializeApp() {
@@ -104,26 +232,41 @@ function setupEventListeners() {
 
 function handleNavigation(e) {
   const section = e.target.dataset.section;
+  
+  // Add page transition effect
+  const content = document.querySelector('.content');
+  content.style.opacity = '0.7';
+  content.style.transform = 'translateY(5px)';
+  
+  setTimeout(() => {
+    // Update active button with smooth animation
+    document.querySelectorAll(".nav-button").forEach((btn) => {
+      btn.classList.remove("active");
+    });
+    e.target.classList.add("active");
 
-  // Update active button
-  document.querySelectorAll(".nav-button").forEach((btn) => {
-    btn.classList.remove("active");
-  });
-  e.target.classList.add("active");
+    // Update active section
+    document.querySelectorAll(".section").forEach((sec) => {
+      sec.classList.remove("active");
+    });
+    document.getElementById(section).classList.add("active");
+    
+    // Restore content with animation
+    content.style.opacity = '1';
+    content.style.transform = 'translateY(0)';
+    content.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
 
-  // Update active section
-  document.querySelectorAll(".section").forEach((sec) => {
-    sec.classList.remove("active");
-  });
-  document.getElementById(section).classList.add("active");
+    // Re-initialize visual effects for new content
+    observeElements();
 
-  // Refresh charts if switching to analytics or dashboard
-  if (section === "dashboard" || section === "analytics") {
-    setTimeout(() => {
-      renderPieChart();
-      renderExpenseChart();
-    }, 100);
-  }
+    // Refresh charts if switching to analytics or dashboard
+    if (section === "dashboard" || section === "analytics") {
+      setTimeout(() => {
+        renderPieChart();
+        renderExpenseChart();
+      }, 100);
+    }
+  }, 150);
 }
 
 /*  API Calls  */
@@ -406,16 +549,32 @@ function renderRecentTransactions(transactions, limit = 5) {
 }
 
 function updateStatistics(stats) {
-  document.getElementById("stat-income").textContent = formatCurrency(
-    stats.total_income,
-  );
-  document.getElementById("stat-expense").textContent = formatCurrency(
-    stats.total_expense,
-  );
-  document.getElementById("stat-balance").textContent = formatCurrency(
-    stats.balance,
-  );
-  document.getElementById("stat-count").textContent = stats.transaction_count;
+  // Add animated counter effects
+  const incomeElement = document.getElementById("stat-income");
+  const expenseElement = document.getElementById("stat-expense");
+  const balanceElement = document.getElementById("stat-balance");
+  const countElement = document.getElementById("stat-count");
+  
+  // Animate each stat with delay for staggered effect
+  setTimeout(() => {
+    incomeElement.textContent = formatCurrency(stats.total_income);
+    incomeElement.style.animation = 'scaleIn 0.6s ease-out';
+  }, 50);
+  
+  setTimeout(() => {
+    expenseElement.textContent = formatCurrency(stats.total_expense);
+    expenseElement.style.animation = 'scaleIn 0.6s ease-out';
+  }, 100);
+  
+  setTimeout(() => {
+    balanceElement.textContent = formatCurrency(stats.balance);
+    balanceElement.style.animation = 'scaleIn 0.6s ease-out';
+  }, 150);
+  
+  setTimeout(() => {
+    countElement.textContent = stats.transaction_count;
+    countElement.style.animation = 'scaleIn 0.6s ease-out';
+  }, 200);
 }
 
 function updateCategorySummary(byCategory) {
@@ -642,29 +801,138 @@ async function handleExportData() {
 /*  Utility Functions */
 
 function showNotification(message, type = "info") {
-  // Create notification element
+  // Create notification element with enhanced styling
   const notification = document.createElement("div");
+  
+  const bgColor = type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#6366f1";
+  const icon = type === "success" ? "✓" : type === "error" ? "✕" : "ℹ";
+  
   notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background-color: ${type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#3b82f6"};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-        z-index: 10000;
-        animation: slideUp 0.3s ease;
-        font-weight: 500;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1.25rem 1.75rem;
+    background: linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-width: 300px;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+  `;
+  
+  const iconSpan = document.createElement("span");
+  iconSpan.textContent = icon;
+  iconSpan.style.cssText = `
+    font-size: 1.2rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    animation: bounce 0.6s ease-out;
+  `;
+  
+  const messageSpan = document.createElement("span");
+  messageSpan.textContent = message;
+  
+  notification.appendChild(iconSpan);
+  notification.appendChild(messageSpan);
+  
+  // Add progress bar
+  const progressBar = document.createElement("div");
+  progressBar.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 0 0 12px 0;
+    animation: slideRight 3s linear forwards;
+  `;
+  notification.appendChild(progressBar);
+  
+  // Add styles for animations if not already present
+  if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(400px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes slideRight {
+        from {
+          width: 100%;
+        }
+        to {
+          width: 0%;
+        }
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
     `;
-  notification.textContent = message;
+    document.head.appendChild(style);
+  }
 
   document.body.appendChild(notification);
 
   setTimeout(() => {
-    notification.style.animation = "slideUp 0.3s ease reverse";
-    setTimeout(() => notification.remove(), 300);
+    notification.style.animation = "slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) reverse";
+    setTimeout(() => notification.remove(), 400);
   }, 3000);
 }
 
 console.log("PayPulse frontend loaded successfully");
+
+// ==================== Advanced Visual Effects ====================
+
+// Cursor glow effect
+document.addEventListener('mousemove', (e) => {
+  // Create a subtle glow effect that follows cursor
+  const x = e.clientX;
+  const y = e.clientY;
+  
+  // Add cursor highlight to nearby interactive elements
+  document.querySelectorAll('button, input, select, .stat-card, .chart-wrapper').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    const distance = Math.sqrt(
+      Math.pow(x - (rect.left + rect.width / 2), 2) + 
+      Math.pow(y - (rect.top + rect.height / 2), 2)
+    );
+    
+    if (distance < 150) {
+      const opacity = Math.max(0, 1 - distance / 150);
+      el.style.boxShadow = `0 0 ${20 * opacity}px rgba(99, 102, 241, ${opacity * 0.5})`;
+    }
+  });
+});
+
+// Smooth scroll to top on page load
+window.addEventListener('load', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Add animation to page on tab visibility change
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    document.querySelectorAll('*').forEach(el => {
+      el.style.animation = 'none';
+    });
+  } else {
+    document.location.reload();
+  }
+});
