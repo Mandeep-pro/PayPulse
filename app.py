@@ -3,7 +3,7 @@ PayPulse - Transaction Tracking Application
 Backend Flask Server
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -32,6 +32,16 @@ with app.app_context():
     db.create_all()
 
 # ==================== API Routes ====================
+
+@app.route('/', methods=['GET'])
+def serve_index():
+    """Serve the index.html file"""
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve static files (CSS, JS, etc.)"""
+    return send_from_directory('.', filename)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

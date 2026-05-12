@@ -5,198 +5,369 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayPulse - Transaction Tracker</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        /* Section visibility */
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white !important;
+        }
+        .nav-button {
+            display: block;
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem 0;
+            border: none;
+            background-color: transparent;
+            color: var(--primary-color);
+            text-align: left;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .nav-button:hover {
+            background-color: #e0e7ff;
+            transform: translateX(5px);
+        }
+        .nav-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 1.5rem;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card.income {
+            border-left: 4px solid var(--success-color);
+        }
+        .stat-card.expense {
+            border-left: 4px solid var(--danger-color);
+        }
+        .stat-card.balance {
+            border-left: 4px solid var(--primary-color);
+        }
+        .stat-card.count {
+            border-left: 4px solid var(--warning-color);
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 0.5rem 0;
+        }
+        .modal-content {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary, .btn-success, .btn-danger {
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        table {
+            border-collapse: collapse;
+        }
+        thead {
+            background-color: #f1f5f9;
+        }
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1>💰 PayPulse</h1>
-                <p>Track Your Transactions & Visualize Your Spending</p>
-            </div>
-        </header>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+        <div class="container-fluid">
+            <span class="navbar-brand">💰 PayPulse</span>
+            <small class="text-white ms-3">Track Your Transactions & Visualize Your Spending</small>
+        </div>
+    </nav>
 
-        <!-- Main Content -->
-        <main class="main-content">
+    <div class="container-fluid">
+        <div class="row">
             <!-- Sidebar Navigation -->
-            <aside class="sidebar">
-                <nav class="nav">
+            <nav class="col-md-2 p-4 bg-light" style="min-height: 100vh;">
+                <div class="d-flex flex-column gap-2">
                     <button class="nav-button active" data-section="dashboard">📊 Dashboard</button>
                     <button class="nav-button" data-section="transactions">💳 Transactions</button>
                     <button class="nav-button" data-section="add-transaction">➕ Add Transaction</button>
                     <button class="nav-button" data-section="analytics">📈 Analytics</button>
-                </nav>
-            </aside>
+                </div>
+            </nav>
 
             <!-- Content Area -->
-            <div class="content">
+            <main class="col-md-10 p-4">
                 <!-- Dashboard Section -->
-                <section id="dashboard" class="section active">
-                    <h2>Dashboard</h2>
+                <section id="dashboard" class="section active mb-4">
+                    <h2 class="mb-4">Dashboard</h2>
                     
                     <!-- Statistics Cards -->
-                    <div class="stats-grid">
-                        <div class="stat-card income">
-                            <h3>Total Income</h3>
-                            <p class="stat-value" id="stat-income">$0.00</p>
+                    <div class="row mb-5 g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card stat-card income">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Income</h5>
+                                    <p class="stat-value" id="stat-income">$0.00</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-card expense">
-                            <h3>Total Expense</h3>
-                            <p class="stat-value" id="stat-expense">$0.00</p>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card stat-card expense">
+                                <div class="card-body">
+                                    <h5 class="card-title">Total Expense</h5>
+                                    <p class="stat-value" id="stat-expense">$0.00</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-card balance">
-                            <h3>Balance</h3>
-                            <p class="stat-value" id="stat-balance">$0.00</p>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card stat-card balance">
+                                <div class="card-body">
+                                    <h5 class="card-title">Balance</h5>
+                                    <p class="stat-value" id="stat-balance">$0.00</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-card count">
-                            <h3>Transactions</h3>
-                            <p class="stat-value" id="stat-count">0</p>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card stat-card count">
+                                <div class="card-body">
+                                    <h5 class="card-title">Transactions</h5>
+                                    <p class="stat-value" id="stat-count">0</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Charts -->
-                    <div class="charts-container">
-                        <div class="chart-wrapper">
-                            <h3>Spending by Category</h3>
-                            <div id="pieChart"></div>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Spending by Category</h5>
+                                    <div id="pieChart"></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="chart-wrapper">
-                            <h3>Recent Transactions</h3>
-                            <div id="recentTransactions" class="recent-list"></div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Recent Transactions</h5>
+                                    <div id="recentTransactions" class="recent-list"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Transactions Section -->
-                <section id="transactions" class="section">
-                    <h2>All Transactions</h2>
+                <section id="transactions" class="section mb-4">
+                    <h2 class="mb-4">All Transactions</h2>
                     
                     <!-- Filters -->
-                    <div class="filters">
-                        <input type="text" id="searchInput" placeholder="Search transactions..." class="search-input">
-                        <select id="categoryFilter" class="filter-select">
-                            <option value="">All Categories</option>
-                        </select>
+                    <div class="row mb-4 g-3">
+                        <div class="col-md-8">
+                            <input type="text" id="searchInput" placeholder="Search transactions..." class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Transactions Table -->
-                    <div class="table-container">
-                        <table id="transactionsTable" class="transactions-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsBody">
-                            </tbody>
-                        </table>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="transactionsTable" class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Category</th>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactionsBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 <!-- Add Transaction Section -->
-                <section id="add-transaction" class="section">
-                    <h2>Add New Transaction</h2>
+                <section id="add-transaction" class="section mb-4">
+                    <h2 class="mb-4">Add New Transaction</h2>
                     
-                    <form id="transactionForm" class="transaction-form">
-                        <div class="form-group">
-                            <label for="amount">Amount *</label>
-                            <input type="number" id="amount" name="amount" step="0.01" required placeholder="0.00">
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="transactionForm">
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Amount *</label>
+                                    <input type="number" id="amount" name="amount" class="form-control" step="0.01" required placeholder="0.00">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category *</label>
+                                    <select id="category" name="category" class="form-select" required>
+                                        <option value="">Select a category</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description *</label>
+                                    <input type="text" id="description" name="description" class="form-control" required placeholder="Enter transaction description">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="transactionDate" class="form-label">Date *</label>
+                                    <input type="date" id="transactionDate" name="date" class="form-control" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="transactionType" class="form-label">Type *</label>
+                                    <select id="transactionType" name="type" class="form-select" required>
+                                        <option value="expense">Expense</option>
+                                        <option value="income">Income</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100">Add Transaction</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Analytics Section -->
+                <section id="analytics" class="section mb-4">
+                    <h2 class="mb-4">Analytics & Reports</h2>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Expense Breakdown</h5>
+                                    <div id="expenseChart"></div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="category">Category *</label>
-                            <select id="category" name="category" required>
-                                <option value="">Select a category</option>
-                            </select>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Category Summary</h5>
+                                    <div id="categorySummary" class="category-summary"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button id="exportBtn" class="btn btn-success">📥 Export Data as JSON</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal for Edit/Delete -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editId" name="id">
+                        
+                        <div class="mb-3">
+                            <label for="editAmount" class="form-label">Amount *</label>
+                            <input type="number" id="editAmount" name="amount" class="form-control" step="0.01" required>
                         </div>
 
-                        <div class="form-group">
-                            <label for="description">Description *</label>
-                            <input type="text" id="description" name="description" required placeholder="Enter transaction description">
+                        <div class="mb-3">
+                            <label for="editCategory" class="form-label">Category *</label>
+                            <select id="editCategory" name="category" class="form-select" required></select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="transactionDate">Date *</label>
-                            <input type="date" id="transactionDate" name="date" required>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Description *</label>
+                            <input type="text" id="editDescription" name="description" class="form-control" required>
                         </div>
 
-                        <div class="form-group">
-                            <label for="transactionType">Type *</label>
-                            <select id="transactionType" name="type" required>
+                        <div class="mb-3">
+                            <label for="editDate" class="form-label">Date *</label>
+                            <input type="date" id="editDate" name="date" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editType" class="form-label">Type *</label>
+                            <select id="editType" name="type" class="form-select" required>
                                 <option value="expense">Expense</option>
                                 <option value="income">Income</option>
                             </select>
                         </div>
-
-                        <button type="submit" class="btn-submit">Add Transaction</button>
                     </form>
-                </section>
-
-                <!-- Analytics Section -->
-                <section id="analytics" class="section">
-                    <h2>Analytics & Reports</h2>
-
-                    <div class="analytics-container">
-                        <div class="analytics-card">
-                            <h3>Expense Breakdown</h3>
-                            <div id="expenseChart"></div>
-                        </div>
-
-                        <div class="analytics-card">
-                            <h3>Category Summary</h3>
-                            <div id="categorySummary" class="category-summary"></div>
-                        </div>
-                    </div>
-
-                    <div class="export-section">
-                        <button id="exportBtn" class="btn-export">📥 Export Data as JSON</button>
-                    </div>
-                </section>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="editForm" class="btn btn-primary">Update</button>
+                    <button type="button" id="deleteBtn" class="btn btn-danger">Delete</button>
+                </div>
             </div>
-        </main>
+        </div>
     </div>
 
-    <!-- Modal for Edit/Delete -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Edit Transaction</h2>
-            <form id="editForm" class="transaction-form">
-                <input type="hidden" id="editId" name="id">
-                
-                <div class="form-group">
-                    <label for="editAmount">Amount *</label>
-                    <input type="number" id="editAmount" name="amount" step="0.01" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="editCategory">Category *</label>
-                    <select id="editCategory" name="category" required></select>
-                </div>
-
-                <div class="form-group">
-                    <label for="editDescription">Description *</label>
-                    <input type="text" id="editDescription" name="description" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="editDate">Date *</label>
-                    <input type="date" id="editDate" name="date" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="editType">Type *</label>
-                    <select id="editType" name="type" required>
-                        <option value="expense">Expense</option>
-                        <option value="income">Income</option>
-                    </select>
-                </div>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
 
                 <div class="modal-buttons">
                     <button type="submit" class="btn-submit">Update</button>

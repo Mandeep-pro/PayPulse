@@ -220,12 +220,7 @@ function setupEventListeners() {
     .getElementById("exportBtn")
     .addEventListener("click", handleExportData);
 
-  // Modal
-  document.querySelector(".close").addEventListener("click", closeModal);
-  window.addEventListener("click", (e) => {
-    const modal = document.getElementById("modal");
-    if (e.target === modal) closeModal();
-  });
+  // Modal close button handled by Bootstrap
 }
 
 /* ==================== Navigation ==================== */
@@ -233,40 +228,25 @@ function setupEventListeners() {
 function handleNavigation(e) {
   const section = e.target.dataset.section;
   
-  // Add page transition effect
-  const content = document.querySelector('.content');
-  content.style.opacity = '0.7';
-  content.style.transform = 'translateY(5px)';
-  
-  setTimeout(() => {
-    // Update active button with smooth animation
-    document.querySelectorAll(".nav-button").forEach((btn) => {
-      btn.classList.remove("active");
-    });
-    e.target.classList.add("active");
+  // Update active button
+  document.querySelectorAll(".nav-button").forEach((btn) => {
+    btn.classList.remove("active");
+  });
+  e.target.classList.add("active");
 
-    // Update active section
-    document.querySelectorAll(".section").forEach((sec) => {
-      sec.classList.remove("active");
-    });
-    document.getElementById(section).classList.add("active");
-    
-    // Restore content with animation
-    content.style.opacity = '1';
-    content.style.transform = 'translateY(0)';
-    content.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+  // Update active section
+  document.querySelectorAll(".section").forEach((sec) => {
+    sec.classList.remove("active");
+  });
+  document.getElementById(section).classList.add("active");
 
-    // Re-initialize visual effects for new content
-    observeElements();
-
-    // Refresh charts if switching to analytics or dashboard
-    if (section === "dashboard" || section === "analytics") {
-      setTimeout(() => {
-        renderPieChart();
-        renderExpenseChart();
-      }, 100);
-    }
-  }, 150);
+  // Refresh charts if switching to analytics or dashboard
+  if (section === "dashboard" || section === "analytics") {
+    setTimeout(() => {
+      renderPieChart();
+      renderExpenseChart();
+    }, 100);
+  }
 }
 
 /*  API Calls  */
@@ -487,8 +467,9 @@ function renderTransactionsTable(transactions) {
   transactions.forEach((trans) => {
     const date = new Date(trans.date).toLocaleDateString();
     const amountClass =
-      trans.type === "income" ? "amount-income" : "amount-expense";
-    const typeBadge = `<span class="type-badge ${trans.type}">${trans.type.toUpperCase()}</span>`;
+      trans.type === "income" ? "text-success fw-bold" : "text-danger fw-bold";
+    const badgeClass = trans.type === "income" ? "bg-success" : "bg-danger";
+    const typeBadge = `<span class="badge ${badgeClass}">${trans.type.toUpperCase()}</span>`;
     const inrAmount = convertToINR(trans.amount);
     const amount =
       trans.type === "income"
@@ -503,10 +484,8 @@ function renderTransactionsTable(transactions) {
                 <td>${typeBadge}</td>
                 <td class="${amountClass}">${amount}</td>
                 <td>
-                    <div class="action-buttons">
-                        <button class="btn-action btn-edit" onclick="openEditModal(${trans.id})">Edit</button>
-                        <button class="btn-action btn-delete-action" onclick="openDeleteModal(${trans.id})">Delete</button>
-                    </div>
+                    <button class="btn btn-sm btn-primary" onclick="openEditModal(${trans.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="openEditModal(${trans.id}, true)">Delete</button>
                 </td>
             </tr>
         `;
@@ -522,13 +501,13 @@ function renderRecentTransactions(transactions, limit = 5) {
 
   if (recent.length === 0) {
     container.innerHTML =
-      '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No transactions yet</p>';
+      '<p class="text-center text-muted py-4">No transactions yet</p>';
     return;
   }
 
   recent.forEach((trans) => {
     const date = new Date(trans.date).toLocaleDateString();
-    const amountClass = trans.type === "income" ? "income" : "expense";
+    const amountClass = trans.type === "income" ? "text-success" : "text-danger";
     const inrAmount = convertToINR(trans.amount);
     const amount =
       trans.type === "income"
@@ -536,12 +515,12 @@ function renderRecentTransactions(transactions, limit = 5) {
         : `-${CURRENCY_SYMBOL}${inrAmount.toFixed(2)}`;
 
     const item = `
-            <div class="recent-item">
-                <div class="recent-item-info">
-                    <div class="recent-item-desc">${trans.description}</div>
-                    <div class="recent-item-cat">${trans.category} • ${date}</div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div>
+                    <div class="fw-bold">${trans.description}</div>
+                    <div class="text-muted small">${trans.category} • ${date}</div>
                 </div>
-                <div class="recent-item-amount ${amountClass}">${amount}</div>
+                <div class="fw-bold ${amountClass}">${amount}</div>
             </div>
         `;
     container.innerHTML += item;
@@ -583,7 +562,7 @@ function updateCategorySummary(byCategory) {
 
   if (Object.keys(byCategory).length === 0) {
     container.innerHTML =
-      '<p style="text-align: center; color: var(--text-secondary); grid-column: 1/-1; padding: 2rem;">No expense data available</p>';
+      '<p class="text-center text-muted">No expense data available</p>';
     return;
   }
 
@@ -593,10 +572,12 @@ function updateCategorySummary(byCategory) {
     const percentage = ((amount / total) * 100).toFixed(1);
     const inrAmount = convertToINR(amount);
     const item = `
-            <div class="category-item">
-                <div class="category-name">${category}</div>
-                <div class="category-amount">${CURRENCY_SYMBOL}${inrAmount.toFixed(2)}</div>
-                <div class="category-percentage">${percentage}% of expenses</div>
+            <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div>
+                    <div class="fw-bold">${category}</div>
+                    <div class="small text-muted">${percentage}% of expenses</div>
+                </div>
+                <div class="badge bg-primary">${CURRENCY_SYMBOL}${inrAmount.toFixed(2)}</div>
             </div>
         `;
     container.innerHTML += item;
@@ -747,7 +728,7 @@ function filterTransactions() {
 
 /* ==================== Modal Functions ==================== */
 
-function openEditModal(id) {
+function openEditModal(id, isDelete = false) {
   const transaction = allTransactions.find((t) => t.id === id);
   if (!transaction) return;
 
@@ -760,16 +741,15 @@ function openEditModal(id) {
   document.getElementById("editDate").value = transaction.date.split("T")[0];
   document.getElementById("editType").value = transaction.type;
 
-  document.getElementById("modal").style.display = "block";
-}
-
-function openDeleteModal(id) {
-  currentEditId = id;
-  document.getElementById("modal").style.display = "block";
+  // Show Bootstrap modal
+  const modal = new bootstrap.Modal(document.getElementById("editModal"));
+  modal.show();
 }
 
 function closeModal() {
-  document.getElementById("modal").style.display = "none";
+  const modalElement = document.getElementById("editModal");
+  const modal = bootstrap.Modal.getInstance(modalElement);
+  if (modal) modal.hide();
   currentEditId = null;
 }
 
@@ -801,138 +781,43 @@ async function handleExportData() {
 /*  Utility Functions */
 
 function showNotification(message, type = "info") {
-  // Create notification element with enhanced styling
-  const notification = document.createElement("div");
-  
-  const bgColor = type === "success" ? "#10b981" : type === "error" ? "#ef4444" : "#6366f1";
-  const icon = type === "success" ? "✓" : type === "error" ? "✕" : "ℹ";
-  
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 1.25rem 1.75rem;
-    background: linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%);
-    color: white;
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    z-index: 10000;
-    animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    min-width: 300px;
-    font-size: 0.95rem;
-    letter-spacing: 0.3px;
-  `;
-  
-  const iconSpan = document.createElement("span");
-  iconSpan.textContent = icon;
-  iconSpan.style.cssText = `
-    font-size: 1.2rem;
-    font-weight: bold;
-    flex-shrink: 0;
-    animation: bounce 0.6s ease-out;
-  `;
-  
-  const messageSpan = document.createElement("span");
-  messageSpan.textContent = message;
-  
-  notification.appendChild(iconSpan);
-  notification.appendChild(messageSpan);
-  
-  // Add progress bar
-  const progressBar = document.createElement("div");
-  progressBar.style.cssText = `
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 0 0 12px 0;
-    animation: slideRight 3s linear forwards;
-  `;
-  notification.appendChild(progressBar);
-  
-  // Add styles for animations if not already present
-  if (!document.getElementById('notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-      @keyframes slideInRight {
-        from {
-          opacity: 0;
-          transform: translateX(400px);
-        }
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-      @keyframes slideRight {
-        from {
-          width: 100%;
-        }
-        to {
-          width: 0%;
-        }
-      }
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-      }
-    `;
-    document.head.appendChild(style);
+  // Use Bootstrap Toast for notifications
+  const toastContainer = document.getElementById("toast-container");
+  if (!toastContainer) {
+    const container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "position-fixed bottom-0 end-0 p-3";
+    container.style.zIndex = "11";
+    document.body.appendChild(container);
   }
-
-  document.body.appendChild(notification);
-
+  
+  const alertClass = type === "success" ? "alert-success" : type === "error" ? "alert-danger" : "alert-info";
+  const toastHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show mb-2" role="alert" style="min-width: 300px;">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  const container = document.getElementById("toast-container");
+  container.insertAdjacentHTML("beforeend", toastHtml);
+  
+  // Auto-dismiss after 3 seconds
   setTimeout(() => {
-    notification.style.animation = "slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) reverse";
-    setTimeout(() => notification.remove(), 400);
+    const alerts = container.querySelectorAll(".alert");
+    if (alerts.length > 0) {
+      const lastAlert = alerts[alerts.length - 1];
+      const alert = new bootstrap.Alert(lastAlert);
+      alert.close();
+    }
   }, 3000);
 }
 
 console.log("PayPulse frontend loaded successfully");
 
-// ==================== Advanced Visual Effects ====================
-
-// Cursor glow effect
-document.addEventListener('mousemove', (e) => {
-  // Create a subtle glow effect that follows cursor
-  const x = e.clientX;
-  const y = e.clientY;
-  
-  // Add cursor highlight to nearby interactive elements
-  document.querySelectorAll('button, input, select, .stat-card, .chart-wrapper').forEach(el => {
-    const rect = el.getBoundingClientRect();
-    const distance = Math.sqrt(
-      Math.pow(x - (rect.left + rect.width / 2), 2) + 
-      Math.pow(y - (rect.top + rect.height / 2), 2)
-    );
-    
-    if (distance < 150) {
-      const opacity = Math.max(0, 1 - distance / 150);
-      el.style.boxShadow = `0 0 ${20 * opacity}px rgba(99, 102, 241, ${opacity * 0.5})`;
-    }
-  });
-});
+// ==================== Smooth Scroll ==================== 
 
 // Smooth scroll to top on page load
 window.addEventListener('load', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-// Add animation to page on tab visibility change
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    document.querySelectorAll('*').forEach(el => {
-      el.style.animation = 'none';
-    });
-  } else {
-    document.location.reload();
-  }
 });
